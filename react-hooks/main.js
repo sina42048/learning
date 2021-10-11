@@ -35,7 +35,9 @@ const MyReact = (function () {
         enumerable: true,
         value: initialValue,
       });
-      hooks[currentHook] = obj;
+      if (!hooks[currentHook]) {
+        hooks[currentHook] = obj;
+      }
       return hooks[currentHook++];
     },
     useCallback(callback, depArray) {
@@ -66,7 +68,15 @@ const MyReact = (function () {
 function Counter() {
   const [count, setCount] = MyReact.useState(0);
   const [text, setText] = MyReact.useState("foo"); // 2nd state hook!
-  const personData = MyReact.useRef({ name: "sina", age: 25 });
+  const personData = MyReact.useRef(null);
+
+  if (personData.current) {
+    personData.current = { name: "ali", age: 63 };
+  }
+  if (!personData.current) {
+    personData.current = { name: "sina", age: 25 };
+  }
+
   const cb = MyReact.useCallback(
     () => console.log("Hello from useCallback"),
     []
