@@ -1,9 +1,21 @@
+function fnName() {
+  try {
+    throw new Error();
+  } catch (e) {
+    // matches this function, the caller and the parent
+    const allMatches = e.stack.match(/(\w+)@|at (\w+) \(/g);
+    // match parent function name
+    const parentMatches = allMatches[1].match(/(\w+)@|at (\w+) \(/);
+    // return only name
+    return parentMatches[1] || parentMatches[2];
+  }
+}
+
 const MyReact = (function () {
   let hooks = [],
     currentHook = 0; // array of hooks, and an iterator!
   return {
     render(Component) {
-      console.log(hooks);
       const Comp = Component(); // run effects
       Comp.render();
       currentHook = 0; // reset for next render
@@ -24,7 +36,15 @@ const MyReact = (function () {
     useState(initialValue) {
       hooks[currentHook] = hooks[currentHook] || initialValue; // type: any
       const setStateHookIndex = currentHook; // for setState's closure!
-      const setState = (newState) => (hooks[setStateHookIndex] = newState);
+      const parentFunctionName = fnName();
+      const setState = (newState) => {
+        if (typeof newState === "function") {
+          hooks[setStateHookIndex] = newState(hooks[setStateHookIndex]);
+        } else {
+          hooks[setStateHookIndex] = newState;
+        }
+        this.render(window[parentFunctionName]);
+      };
       return [hooks[currentHook++], setState];
     },
     useRef(initialValue) {
@@ -81,14 +101,41 @@ function Counter() {
     () => console.log("Hello from useCallback"),
     []
   );
-  const memo = MyReact.useMemo(
-    () => (text == "bar" ? "memoized changed !" : "memoized"),
-    [text]
-  );
+  const memo = MyReact.useMemo(() => text, [text]);
+
+  console.log(text);
+  console.log(count);
+  console.log(memo);
 
   MyReact.useEffect(() => {
-    console.log("effect", count, text, personData, cb, memo);
-  }, [count, text]);
+    //console.log("effect", count, text, personData, cb, memo);
+    const t1 = setTimeout(() => {
+      setText("sina");
+      clearTimeout(t1);
+    }, 3000);
+
+    const t2 = setTimeout(() => {
+      setCount((count) => count + 5);
+      clearTimeout(t2);
+    }, 2000);
+
+    const t3 = setTimeout(() => {
+      setCount((count) => count + 25);
+    }, 5000);
+
+    // const t2 = setTimeout(() => {
+    //   setText("ahmad");
+    //   clearTimeout(t2);
+    // }, 2500);
+
+    // setTimeout(() => {
+    //   setText("ali");
+    // }, 2000);
+    // setTimeout(() => {
+    //   console.log("called")
+    //   setCount(25);
+    // }, 5000);
+  }, [text]);
   return {
     click: () => setCount(count + 1),
     type: (txt) => setText(txt),
@@ -97,10 +144,4 @@ function Counter() {
   };
 }
 let App;
-App = MyReact.render(Counter);
-
-App.click();
-App = MyReact.render(Counter);
-
-App.type("bar");
 App = MyReact.render(Counter);
