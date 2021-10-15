@@ -16,7 +16,12 @@ const MyReact = (function () {
     currentHook = 0; // array of hooks, and an iterator!
   return {
     render(Component) {
-      const Comp = Component(); // run effects
+      let Comp;
+      if (typeof Component === "string") {
+        Comp = eval(`${Component}()`);
+      } else {
+        Comp = Component(); // run effects
+      }
       Comp.render();
       currentHook = 0; // reset for next render
       return Comp;
@@ -43,7 +48,7 @@ const MyReact = (function () {
         } else {
           hooks[setStateHookIndex] = newState;
         }
-        this.render(window[parentFunctionName]);
+        this.render(window[parentFunctionName] || parentFunctionName);
       };
       return [hooks[currentHook++], setState];
     },
@@ -85,7 +90,7 @@ const MyReact = (function () {
   };
 })();
 
-function Counter() {
+const Counter = () => {
   const [count, setCount] = MyReact.useState(0);
   const [text, setText] = MyReact.useState("foo"); // 2nd state hook!
   const personData = MyReact.useRef(null);
@@ -108,7 +113,6 @@ function Counter() {
   console.log(memo);
 
   MyReact.useEffect(() => {
-    //console.log("effect", count, text, personData, cb, memo);
     const t1 = setTimeout(() => {
       setText("sina");
       clearTimeout(t1);
@@ -121,20 +125,8 @@ function Counter() {
 
     const t3 = setTimeout(() => {
       setCount((count) => count + 25);
+      clearTimeout(t3);
     }, 5000);
-
-    // const t2 = setTimeout(() => {
-    //   setText("ahmad");
-    //   clearTimeout(t2);
-    // }, 2500);
-
-    // setTimeout(() => {
-    //   setText("ali");
-    // }, 2000);
-    // setTimeout(() => {
-    //   console.log("called")
-    //   setCount(25);
-    // }, 5000);
   }, [text]);
   return {
     click: () => setCount(count + 1),
@@ -142,6 +134,6 @@ function Counter() {
     noop: () => setCount(count),
     render: () => console.log("render", { count, text }),
   };
-}
+};
 let App;
 App = MyReact.render(Counter);
