@@ -122,10 +122,6 @@ const Label = () => {
       setText("elham");
     }, 8000);
   }, []);
-
-  return {
-    render: () => {},
-  };
 };
 
 const App = () => {
