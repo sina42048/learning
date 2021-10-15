@@ -41,22 +41,33 @@ const MyReact = (function () {
       currentHook++; // done with this hook
     },
     useState(initialValue) {
-      hooks[currentHook] = hooks[currentHook] || initialValue; // type: any
-      const setStateHookIndex = currentHook; // for setState's closure!
       const parentFunctionName = fnName();
+      hooks[currentHook] = hooks[currentHook] || [
+        initialValue,
+        parentFunctionName,
+      ]; // type: any
+      const setStateHookIndex = currentHook; // for setState's closure!
       const setState = (newState) => {
         if (typeof newState === "function") {
-          hooks[setStateHookIndex] = newState(hooks[setStateHookIndex]);
+          hooks[setStateHookIndex] = [
+            newState(hooks[setStateHookIndex][0]),
+            parentFunctionName,
+          ];
         } else {
-          hooks[setStateHookIndex] = newState;
+          hooks[setStateHookIndex] = [newState, parentFunctionName];
         }
+        const id = hooks.findIndex(
+          (state) =>
+            Object.prototype.toString.call(state) === "[object Array]" &&
+            state[1] === parentFunctionName
+        );
         this.render(
           window[parentFunctionName] || parentFunctionName,
           parentFunctionName,
-          setStateHookIndex
+          id
         );
       };
-      return [hooks[currentHook++], setState];
+      return [hooks[currentHook++][0], setState];
     },
     useRef(initialValue) {
       const obj = {};
@@ -98,10 +109,15 @@ const MyReact = (function () {
 
 const Label = () => {
   const [text, setText] = MyReact.useState("elnaz");
+  const [counter, setCounter] = MyReact.useState(0);
 
-  console.log("Label Rendered : " + text);
+  console.log("Label Rendered : " + text + " and " + counter);
 
   MyReact.useEffect(() => {
+    setTimeout(() => {
+      setCounter((count) => count + 30);
+    }, 3000);
+
     setTimeout(() => {
       setText("elham");
     }, 8000);
