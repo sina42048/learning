@@ -15,15 +15,17 @@ const MyReact = (function () {
   let hooks = [],
     currentHook = 0; // array of hooks, and an iterator!
   return {
-    render(Component) {
+    render(Component, fName, index) {
+      if (fName !== "App" && fName !== void 0) {
+        currentHook = index;
+      }
       let Comp;
       if (typeof Component === "string") {
         Comp = eval(`${Component}()`);
       } else {
         Comp = Component(); // run effects
       }
-      Comp.render();
-      currentHook = 0; // reset for next render
+      currentHook = 0;
       return Comp;
     },
     useEffect(callback, depArray) {
@@ -48,7 +50,11 @@ const MyReact = (function () {
         } else {
           hooks[setStateHookIndex] = newState;
         }
-        this.render(window[parentFunctionName] || parentFunctionName);
+        this.render(
+          window[parentFunctionName] || parentFunctionName,
+          parentFunctionName,
+          setStateHookIndex
+        );
       };
       return [hooks[currentHook++], setState];
     },
@@ -90,7 +96,23 @@ const MyReact = (function () {
   };
 })();
 
-const Counter = () => {
+const Label = () => {
+  const [text, setText] = MyReact.useState("elnaz");
+
+  console.log("Label Rendered : " + text);
+
+  MyReact.useEffect(() => {
+    setTimeout(() => {
+      setText("elham");
+    }, 8000);
+  }, []);
+
+  return {
+    render: () => {},
+  };
+};
+
+const App = () => {
   const [count, setCount] = MyReact.useState(0);
   const [text, setText] = MyReact.useState("foo"); // 2nd state hook!
   const personData = MyReact.useRef(null);
@@ -128,12 +150,8 @@ const Counter = () => {
       clearTimeout(t3);
     }, 5000);
   }, [text]);
-  return {
-    click: () => setCount(count + 1),
-    type: (txt) => setText(txt),
-    noop: () => setCount(count),
-    render: () => console.log("render", { count, text }),
-  };
+
+  Label();
 };
-let App;
-App = MyReact.render(Counter);
+let Component;
+Component = MyReact.render(App);
