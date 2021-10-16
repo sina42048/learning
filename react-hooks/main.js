@@ -13,9 +13,20 @@ function fnName() {
 
 const MyReact = (function () {
   let hooks = [],
-    currentHook = 0; // array of hooks, and an iterator!
+    currentHook = 0, // array of hooks, and an iterator!
+    hooksIsAccessible = false;
+
+  function canAccessHooks() {
+    if (!hooksIsAccessible) {
+      console.warn("hooks can only be access in functional component");
+      return false;
+    }
+    return true;
+  }
+
   return {
     render(Component, fName, index) {
+      hooksIsAccessible = true;
       if (fName !== "App" && fName !== void 0) {
         currentHook = index;
       }
@@ -26,9 +37,13 @@ const MyReact = (function () {
         Comp = Component(); // run effects
       }
       currentHook = 0;
+      hooksIsAccessible = false;
       return Comp;
     },
     useEffect(callback, depArray) {
+      if (!canAccessHooks()) {
+        return;
+      }
       const hasNoDeps = !depArray;
       const deps = hooks[currentHook]; // type: array | undefined
       const hasChangedDeps = deps
@@ -41,6 +56,9 @@ const MyReact = (function () {
       currentHook++; // done with this hook
     },
     useState(initialValue) {
+      if (!canAccessHooks()) {
+        return;
+      }
       const parentFunctionName = fnName();
       hooks[currentHook] = hooks[currentHook] || [
         initialValue,
@@ -48,6 +66,7 @@ const MyReact = (function () {
       ]; // type: any
       const setStateHookIndex = currentHook; // for setState's closure!
       const setState = (newState) => {
+        hooksIsAccessible = true;
         if (typeof newState === "function") {
           hooks[setStateHookIndex] = [
             newState(hooks[setStateHookIndex][0]),
@@ -70,6 +89,9 @@ const MyReact = (function () {
       return [hooks[currentHook++][0], setState];
     },
     useRef(initialValue) {
+      if (!canAccessHooks()) {
+        return;
+      }
       const obj = {};
       Object.defineProperty(obj, "current", {
         configurable: false,
@@ -94,6 +116,9 @@ const MyReact = (function () {
       return hooks[currentHook++];
     },
     useMemo(callback, depArray) {
+      if (!canAccessHooks()) {
+        return;
+      }
       const hasNoDeps = !depArray;
       const deps = hooks[currentHook];
       const hasChangedDeps = deps
@@ -167,3 +192,6 @@ const App = () => {
 };
 let Component;
 Component = MyReact.render(App);
+
+
+MyReact.useState(); // only for test to show we can access hooks only in functional component
