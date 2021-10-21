@@ -19,10 +19,10 @@ function isThenable(fn) {
 }
 
 function generatorRunner(generator) {
-  const firsStep = generator.next();
+  const firstStep = generator.next();
   const step = {
     next: () => generator.next(),
-    current: firsStep,
+    current: firstStep,
   };
   timeLoop(step);
 }
