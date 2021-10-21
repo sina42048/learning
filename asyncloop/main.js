@@ -24,24 +24,23 @@ function generatorRunner(generator) {
     next: () => generator.next(),
     current: firstStep,
   };
-  timeLoop(step);
+  generatorLoop(step);
 }
 
-function timeLoop(step) {
+function generatorLoop(step) {
   if (step.current.value === void 0) {
-    clearTimeout(timeLoop);
     return;
   }
   if (isThenable(step.current.value)) {
     step.current.value.then(() => {
       const next = step.next();
       step.current = next;
-      timeLoop(step);
+      generatorLoop(step);
     });
   } else {
     const next = step.next();
     step.current = next;
-    timeLoop(step);
+    generatorLoop(step);
   }
 }
 
