@@ -28,25 +28,21 @@ function generatorRunner(generator) {
 }
 
 function timeLoop(step) {
-  const timerLoop = setTimeout(() => {
-    if (step.current.value === void 0) {
-      clearTimeout(timeLoop);
-      return;
-    }
-    if (isThenable(step.current.value)) {
-      step.current.value.then(() => {
-        const next = step.next();
-        step.current = next;
-        clearTimeout(timerLoop);
-        timeLoop(step);
-      });
-    } else {
+  if (step.current.value === void 0) {
+    clearTimeout(timeLoop);
+    return;
+  }
+  if (isThenable(step.current.value)) {
+    step.current.value.then(() => {
       const next = step.next();
       step.current = next;
-      clearTimeout(timerLoop);
       timeLoop(step);
-    }
-  }, 0);
+    });
+  } else {
+    const next = step.next();
+    step.current = next;
+    timeLoop(step);
+  }
 }
 
 asyncLoop(function* () {
